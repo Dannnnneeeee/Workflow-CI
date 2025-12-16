@@ -228,8 +228,12 @@ jobs:
           echo " Building Docker image..."
           RUN_ID=$(ls -td 0/* | head -n 1 | xargs basename)
           echo "Using run_id: $RUN_ID"
+          MODEL_ID=$(ls -d 0/$RUN_ID/models/* | xargs -n1 basename | head -n 1)
+          echo "Using model_id: $MODEL_ID"
+          MODEL_PATH="0/$RUN_ID/models/$MODEL_ID/artifacts"
+          echo "Using model path: $MODEL_PATH"
           mlflow models build-docker \
-            -m "0/$RUN_ID/models/model" \
+            -m "$MODEL_PATH" \
             -n ${{ env.DOCKER_IMAGE }}:latest \
             --enable-mlserver || echo " Build warning (non-critical)"
           
