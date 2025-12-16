@@ -58,7 +58,7 @@ jobs:
       # Install MLflow
       - name: Install MLflow
         run: |
-          pip install mlflow==2.15.1
+          pip install mlflow==3.6.0
           mlflow --version
       
       # Run MLflow Project
@@ -200,7 +200,7 @@ jobs:
       
       - name: Install MLflow
         run: |
-          pip install mlflow==3.6
+          pip install mlflow==3.6.0
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
