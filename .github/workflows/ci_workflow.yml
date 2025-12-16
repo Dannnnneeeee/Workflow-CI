@@ -35,6 +35,10 @@ jobs:
   # ============================================================================
   train-model:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Allow pushing to repository
+    
+    # Tambahkan default shell untuk conda
     defaults:
       run:
         shell: bash -el {0}
@@ -44,23 +48,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      # Setup Python
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      
       # Setup Conda (needed for MLflow Project)
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
-          python-version: 3.12
+          python-version: '3.12'
           miniconda-version: "latest"
           activate-environment: mlflow-env
           environment-file: MLProject/conda.yaml
       
-      # Install MLflow
+      # Install MLflow di base environment
       - name: Install MLflow
         run: |
           pip install mlflow==3.6.0
@@ -82,7 +80,8 @@ jobs:
           echo "  max_depth: $MAX_D"
           echo "  learning_rate: $LR"
           
-          # Run MLflow project
+          # Run MLflow project dengan --no-conda jika sudah setup environment
+          # Atau gunakan --env-manager=local untuk skip conda creation
           mlflow run . \
             --env-manager=local \
             -P n_estimators=$N_EST \
@@ -146,6 +145,9 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           
+          # Pull latest changes first
+          git pull origin main
+          
           # Create artifacts directory if not exists
           mkdir -p saved_artifacts
           
@@ -163,8 +165,8 @@ jobs:
           if git diff --staged --quiet; then
             echo " No changes to commit"
           else
-            git commit -m " Auto: Save training artifacts from run #${{ github.run_number }} [skip ci]"
-            git push
+            git commit -m "🤖 Auto: Save training artifacts from run #${{ github.run_number }} [skip ci]"
+            git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git main
             echo " Artifacts committed to repository"
           fi
       
@@ -236,7 +238,7 @@ jobs:
           echo " Pushing Docker image to Docker Hub..."
           docker push ${{ env.DOCKER_IMAGE }}:latest
           docker push ${{ env.DOCKER_IMAGE }}:run-${{ github.run_number }}
-          echo " Docker image pushed successfully"
+          echo "Docker image pushed successfully"
       
       - name: Docker Hub link summary
         run: |
@@ -268,14 +270,14 @@ jobs:
         run: |
           echo "##  CI/CD Pipeline Completed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "###  Jobs Status" >> $GITHUB_STEP_SUMMARY
+          echo "### Jobs Status" >> $GITHUB_STEP_SUMMARY
           echo "- Train Model: ${{ needs.train-model.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Build Docker: ${{ needs.build-docker.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "###  Deliverables" >> $GITHUB_STEP_SUMMARY
           echo "1. Model trained with MLflow Project" >> $GITHUB_STEP_SUMMARY
           echo "2. Artifacts saved to GitHub Actions" >> $GITHUB_STEP_SUMMARY
-          echo "3.  Artifacts committed to repository" >> $GITHUB_STEP_SUMMARY
+          echo "3. Artifacts committed to repository" >> $GITHUB_STEP_SUMMARY
           echo "4.  Docker image built and pushed to Docker Hub" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "###  Kriteria 3 - ADVANCE (4 PTS)" >> $GITHUB_STEP_SUMMARY
