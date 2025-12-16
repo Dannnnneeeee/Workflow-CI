@@ -307,17 +307,8 @@ jobs:
           docker images | grep toyota-mlflow-ci
           
           echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
           echo " Build completed successfully!"
-      
-      - name: Test Docker image (Optional)
-        run: |
-          echo " Testing Docker image..."
-          
-          # Quick test - check if image runs
-          docker run --rm ${{ env.DOCKER_IMAGE }}:latest --help || echo "Basic test passed"
-          
-          echo "✓ Image appears to be functional"
       
       - name: Push Docker image to Docker Hub
         run: |
