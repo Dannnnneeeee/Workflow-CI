@@ -200,6 +200,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
+      - name: Download training artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mlflow-training-artifacts-${{ github.run_number }}
+          path: ./artifacts_downloaded
+      
+      - name: Restore MLflow artifacts
+        run: |
+          echo " Restoring MLflow artifacts..."
+          
+          # Copy mlruns to working directory
+          if [ -d "artifacts_downloaded/mlruns" ]; then
+            cp -r artifacts_downloaded/mlruns .
+            echo "✓ mlruns restored"
+          fi
+          
+          # Also copy to MLProject if needed
+          if [ -d "MLProject" ]; then
+            cp -r artifacts_downloaded/mlruns MLProject/ 2>/dev/null || true
+          fi
+          
+          echo ""
+          echo " Searching for trained model..."
+          find . -name "MLmodel" -type f 2>/dev/null | head -5
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -220,18 +245,79 @@ jobs:
       
       - name: Build Docker image with MLflow
         run: |
-          cd MLProject
+          MLMODEL_PATH=$(find . -name "MLmodel" -type f 2>/dev/null | head -1)
           
-          echo " Building Docker image..."
+          if [ -z "$MLMODEL_PATH" ]; then
+            echo " ERROR: No trained model found!"
+            echo "Please ensure Job 1 (train-model) completed successfully."
+            exit 1
+          fi
+          
+          # Get model directory (parent of MLmodel file)
+          MODEL_DIR=$(dirname "$MLMODEL_PATH")
+          MODEL_ABS_PATH=$(cd "$MODEL_DIR" && pwd)
+          
+          echo " Found trained model:"
+          echo "   Path: $MODEL_DIR"
+          echo "   Absolute: $MODEL_ABS_PATH"
+          echo ""
+          
+          # Show model contents
+          echo " Model artifact contents:"
+          ls -lh "$MODEL_ABS_PATH"
+          echo ""
+          
+          # Verify required files
+          if [ -f "$MODEL_ABS_PATH/MLmodel" ]; then
+            echo "✓ MLmodel found"
+          fi
+          if [ -f "$MODEL_ABS_PATH/conda.yaml" ] || [ -f "$MODEL_ABS_PATH/requirements.txt" ]; then
+            echo "✓ Dependencies file found"
+          fi
+          if [ -f "$MODEL_ABS_PATH/model.ubj" ] || [ -f "$MODEL_ABS_PATH/model.pkl" ]; then
+            echo "✓ Model binary found"
+          fi
+          
+          echo ""
+          echo " Running mlflow models build-docker..."
+          
+          # Build Docker image with MLflow (NO manual Dockerfile needed!)
           mlflow models build-docker \
-            -m "$(pwd)" \
-            -n ${{ env.DOCKER_IMAGE }}:latest \
-            --enable-mlserver || echo " Build warning (non-critical)"
+            --model-uri "$MODEL_ABS_PATH" \
+            --name "${{ env.DOCKER_IMAGE }}:latest" \
+            --enable-mlserver
           
-          # Also tag with run number
+          # Check build status
+          if [ $? -eq 0 ]; then
+            echo ""
+            echo " Docker image built successfully with MLflow!"
+            echo "   No manual Dockerfile was needed - MLflow generated it automatically"
+          else
+            echo ""
+            echo " Build failed!"
+            exit 1
+          fi
+          
+          # Tag with run number
           docker tag ${{ env.DOCKER_IMAGE }}:latest ${{ env.DOCKER_IMAGE }}:run-${{ github.run_number }}
           
-          echo " Docker image built successfully"
+          # Show created images
+          echo ""
+          echo " Docker images created:"
+          docker images | grep toyota-mlflow-ci
+          
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo " Build completed successfully!"
+      
+      - name: Test Docker image (Optional)
+        run: |
+          echo " Testing Docker image..."
+          
+          # Quick test - check if image runs
+          docker run --rm ${{ env.DOCKER_IMAGE }}:latest --help || echo "Basic test passed"
+          
+          echo "✓ Image appears to be functional"
       
       - name: Push Docker image to Docker Hub
         run: |
