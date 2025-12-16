@@ -54,7 +54,7 @@ def load_and_prepare_data(data_path, test_size):
         X, y, test_size=test_size, random_state=42
     )
     
-    print(f" Train: {len(X_train)} | Test: {len(X_test)}")
+    print(f"✓ Train: {len(X_train)} | Test: {len(X_test)}")
     
     return X_train, X_test, y_train, y_test
 
@@ -72,7 +72,7 @@ def train_model(X_train, y_train, params):
     )
     
     model.fit(X_train, y_train)
-    print(" Training completed")
+    print("✓ Training completed")
     
     return model
 
@@ -88,9 +88,9 @@ def evaluate_model(model, X_test, y_test):
         'r2': r2_score(y_test, y_pred)
     }
     
-    print(f" RMSE: ${metrics['rmse']:,.2f}")
-    print(f" MAE: ${metrics['mae']:,.2f}")
-    print(f" R² Score: {metrics['r2']:.4f}")
+    print(f"✓ RMSE: ${metrics['rmse']:,.2f}")
+    print(f"✓ MAE: ${metrics['mae']:,.2f}")
+    print(f"✓ R² Score: {metrics['r2']:.4f}")
     
     return metrics
 
@@ -110,11 +110,22 @@ def main():
     print(f"  • learning_rate: {args.learning_rate}")
     print(f"  • test_size: {args.test_size}")
     
-    # Set experiment
-    mlflow.set_experiment("Toyota_CI_Training")
+    # ========================================================================
+    # FIX: Check if running inside MLflow Project
+    # ========================================================================
+    is_mlflow_project = os.getenv('MLFLOW_RUN_ID') is not None
     
-    # Start MLflow run
-    with mlflow.start_run():
+    if is_mlflow_project:
+        print("\n✓ Running inside MLflow Project (using existing run)")
+        # Don't create new run, don't set experiment
+        run_context = None
+    else:
+        print("\n✓ Running standalone (creating new run)")
+        # Set experiment and create run only if standalone
+        mlflow.set_experiment("Toyota_CI_Training")
+        run_context = mlflow.start_run()
+    
+    try:
         # Load data
         X_train, X_test, y_train, y_test = load_and_prepare_data(
             args.data_path, args.test_size
@@ -153,6 +164,11 @@ def main():
         print("="*70)
         
         return metrics
+        
+    finally:
+        # Only end run if we created it (standalone mode)
+        if run_context is not None:
+            mlflow.end_run()
 
 if __name__ == "__main__":
     main()
