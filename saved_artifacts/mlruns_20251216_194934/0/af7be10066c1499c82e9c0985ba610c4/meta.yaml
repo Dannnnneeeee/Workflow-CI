@@ -1,0 +1,14 @@
+artifact_uri: file:///home/runner/work/Workflow-CI/Workflow-CI/MLProject/mlruns/0/af7be10066c1499c82e9c0985ba610c4/artifacts
+end_time: 1765914568843
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: af7be10066c1499c82e9c0985ba610c4
+run_name: bemused-finch-848
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1765914565106
+status: 3
+tags: []
+user_id: runner
