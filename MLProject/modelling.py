@@ -158,7 +158,7 @@ def main():
         
         # Log model
         print("\n[5/5] Saving model...")
-        mlflow.xgboost.log_model(model, "model")
+        mlflow.xgboost.log_model(model, "outputs/model")
         
         print("\n Pipeline completed successfully!")
         print("="*70)
