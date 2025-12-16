@@ -35,6 +35,9 @@ jobs:
   # ============================================================================
   train-model:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
     
     steps:
       # Checkout repository
@@ -54,6 +57,8 @@ jobs:
           auto-update-conda: true
           python-version: 3.12
           miniconda-version: "latest"
+          activate-environment: mlflow-env
+          environment-file: MLProject/conda.yaml
       
       # Install MLflow
       - name: Install MLflow
@@ -79,6 +84,7 @@ jobs:
           
           # Run MLflow project
           mlflow run . \
+            --env-manager=local \
             -P n_estimators=$N_EST \
             -P max_depth=$MAX_D \
             -P learning_rate=$LR \
