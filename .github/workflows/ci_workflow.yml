@@ -79,7 +79,6 @@ jobs:
           
           # Run MLflow project
           mlflow run . \
-            --env-manager=local \
             -P n_estimators=$N_EST \
             -P max_depth=$MAX_D \
             -P learning_rate=$LR \
