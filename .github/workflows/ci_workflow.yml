@@ -223,10 +223,11 @@ jobs:
           cd MLProject
           
           echo " Building Docker image..."
+          RUN_ID=$(ls -td mlruns/0/* | head -n 1 | xargs basename) echo "Using run_id: $RUN_ID"
           mlflow models build-docker \
-            -m "$(pwd)" \
+            -m "mlruns/0/$RUN_ID/artifacts/model" \
             -n ${{ env.DOCKER_IMAGE }}:latest \
-            --enable-mlserver || echo "⚠️ Build warning (non-critical)"
+            --enable-mlserver || echo " Build warning (non-critical)"
           
           # Also tag with run number
           docker tag ${{ env.DOCKER_IMAGE }}:latest ${{ env.DOCKER_IMAGE }}:run-${{ github.run_number }}
