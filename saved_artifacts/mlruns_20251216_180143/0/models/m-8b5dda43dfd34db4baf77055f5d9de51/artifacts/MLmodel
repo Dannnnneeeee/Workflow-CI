@@ -1,0 +1,22 @@
+artifact_path: file:///home/runner/work/Workflow-CI/Workflow-CI/MLProject/mlruns/0/models/m-8b5dda43dfd34db4baf77055f5d9de51/artifacts
+flavors:
+  python_function:
+    data: model.ubj
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.xgboost
+    python_version: 3.12.12
+  xgboost:
+    code: null
+    data: model.ubj
+    model_class: xgboost.sklearn.XGBRegressor
+    model_format: ubj
+    xgb_version: 3.1.2
+mlflow_version: 3.6.0
+model_id: m-8b5dda43dfd34db4baf77055f5d9de51
+model_size_bytes: 416651
+model_uuid: m-8b5dda43dfd34db4baf77055f5d9de51
+prompts: null
+run_id: bcd7fea0e67b4bb591f3fbf0d2598faf
+utc_time_created: '2025-12-16 18:01:36.389918'
